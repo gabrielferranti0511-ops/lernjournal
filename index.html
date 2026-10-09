@@ -414,8 +414,8 @@ function buildBars(){
     const b=document.createElement("button"); b.type="button"; b.className="bar"; b.setAttribute("role","listitem");
     const t=document.createElement("div"); t.className="tick";
     if(i===undefined){
-      b.classList.add("gap"); b.disabled=true; b.setAttribute("aria-label","KW "+kw+": kein Nachweis");
-      b.innerHTML='<span class="col"></span><span class="gapnote">kein Nachweis</span>'; t.innerHTML=`<b>KW ${kw}</b><span>–</span>`;
+      const why=kw===40?"Ferien":"kein Nachweis"; b.classList.add("gap"); b.disabled=true; b.setAttribute("aria-label","KW "+kw+": "+why);
+      b.innerHTML=`<span class="col"></span><span class="gapnote">${why}</span>`; t.innerHTML=`<b>KW ${kw}</b><span>${kw===40?"Ferien":"–"}</span>`;
     } else {
       const d=it[i], h=Math.max(4,Math.round(d.words/scale*100));
       b.style.setProperty("--h",h+"%"); b.dataset.i=i; b.setAttribute("aria-label",`Nr. ${d.nr}, KW ${kw}, ${d.dates}, ${d.words} Wörter`);
@@ -750,7 +750,7 @@ async function enter(role,pw){
   $("eyebrow").textContent=role==="me"?"Verwaltung":"Ansicht Berufsbildner · nur lesen, Bemerkungen möglich";
   $("addweek").hidden=role!=="me"; $("newby").hidden=role!=="me";
   $("noteintro").textContent=role==="me"?"Du kannst Bemerkungen hinzufügen, ändern und entfernen. Wähle, ob sie vom Berufsbildner oder von dir sind.":"Freiwillig. Deine Bemerkung bleibt unter dem Journal stehen. Du kannst sie später noch ändern.";
-  $("stand").textContent="Stand "+new Date(1791534284677).toLocaleDateString("de-CH");
+  $("stand").textContent="Stand "+new Date(1791535225597).toLocaleDateString("de-CH");
   await load();
   state.stamp=state.items.map(x=>0);
   facts(); buildBars(); buildIndex(); drawBanner(); drawRemind();
