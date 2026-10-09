@@ -175,7 +175,7 @@ footer{border-top:2px solid var(--rule-strong);padding-block:18px 40px;display:f
 .rate{display:flex;flex-direction:column;gap:2px}
 .rate i{display:block;height:4px;background:var(--rule)}
 .rate i.on{background:var(--signal)}
-.meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--rule-strong);margin-top:18px;background:var(--surface)}
+.meta{display:grid;grid-template-columns:minmax(0,1fr);border:1px solid var(--rule-strong);margin-top:18px;background:var(--surface)}
 .meta>div{padding:16px 18px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-width:0}
 .meta>div+div{border-left:1px solid var(--rule-strong)}
 @media (max-width:760px){.meta{grid-template-columns:minmax(0,1fr)}.meta>div+div{border-left:0;border-top:1px solid var(--rule-strong)}}
@@ -247,9 +247,7 @@ footer{border-top:2px solid var(--rule-strong);padding-block:18px 40px;display:f
     </div>
     <div class="bars" id="bars" role="list"></div>
     <div class="ticks" id="ticks" aria-hidden="true"></div>
-    <p class="label ratelabel" id="ratelabel" hidden>Selbsteinschätzung der Woche (1 bis 5)</p>
-    <div class="rates" id="rates" hidden></div>
-  </section>
+      </section>
 
   <section class="wrap reader">
     <nav class="index" aria-label="Alle Nachweise">
@@ -288,9 +286,8 @@ footer{border-top:2px solid var(--rule-strong);padding-block:18px 40px;display:f
       </div>
       <div class="docfoot"><span id="words"></span><span class="save" id="save"></span></div>
 
-      <section class="meta" id="meta" aria-label="Bestätigung und Einschätzung" hidden>
+      <section class="meta" id="meta" aria-label="Bestätigung" hidden>
         <div id="seenbox"></div>
-        <div id="ratebox"></div>
       </section>
 
       <section class="note" aria-labelledby="noteh">
@@ -358,9 +355,9 @@ async function api(path,opt={}){
 }
 const rpc=(name,args)=>api("rpc/"+name,{method:"POST",body:JSON.stringify(args)});
 const COLS="id,nr,start,dates,summary,html,content,updated";
-const Q_J="journals?select="+COLS+",seen_at,rating&order=start.asc";
+const Q_J="journals?select="+COLS+",seen_at&order=start.asc";
 const Q_J_OLD="journals?select="+COLS+"&order=start.asc";
-const Q_META="journals?select=id,updated,seen_at,rating";
+const Q_META="journals?select=id,updated,seen_at";
 const Q_R="remarks?select=id,journal_id,author,body,ts&order=ts.asc";
 
 /* ===== Hilfen ===== */
@@ -401,18 +398,13 @@ async function load(){
 }
 
 /* ===== Anzeige ===== */
-function avgRating(){
-  if(!state.cols) return "–";
-  const r=state.items.map(d=>d.rating).filter(x=>x>0);
-  return r.length?(r.reduce((a,b)=>a+b,0)/r.length).toLocaleString("de-CH",{minimumFractionDigits:1,maximumFractionDigits:1})+" / 5":"–";
-}
 function facts(){
   const it=state.items, total=it.reduce((s,d)=>s+d.words,0), kws=it.map(d=>d.kw), last=it[it.length-1];
-  const rows=[["Nachweise",pad2(it.length)],["Kalenderwochen",it.length?"KW "+Math.min(...kws)+"–"+Math.max(...kws):"–"],["Wörter total",fmtNum(total)],["Ø Einschätzung",avgRating()]];
+  const rows=[["Nachweise",pad2(it.length)],["Kalenderwochen",it.length?"KW "+Math.min(...kws)+"–"+Math.max(...kws):"–"],["Wörter total",fmtNum(total)],["Neuester",last?last.dates:"–"]];
   $("facts").innerHTML=rows.map(([k,v])=>`<div class="fact"><span class="label">${k}</span><b>${v}</b></div>`).join("");
 }
 function buildBars(){
-  const it=state.items; const bars=$("bars"), ticks=$("ticks"), rates=$("rates"); bars.textContent=""; ticks.textContent=""; rates.textContent="";
+  const it=state.items; const bars=$("bars"), ticks=$("ticks"); bars.textContent=""; ticks.textContent="";
   if(!it.length) return;
   const byKw=new Map(it.map((d,i)=>[d.kw,i]));
   const min=Math.min(...it.map(d=>d.kw)), max=Math.max(...it.map(d=>d.kw));
@@ -431,19 +423,9 @@ function buildBars(){
       t.dataset.i=i; t.innerHTML=`<b>KW ${kw}</b><span>${d.dates.replace(/\.\d{2}$/,"")}</span>`;
     }
     bars.append(b); ticks.append(t);
-    const rc=document.createElement("div"); rc.className="rate";
-    if(i!==undefined){ rc.dataset.i=i; for(let s=5;s>=1;s--){ const sq=document.createElement("i"); sq.dataset.s=s; rc.append(sq); } }
-    rates.append(rc);
+
   }
-  paintRates(); applySearch();
-}
-function paintRates(){
-  $("rates").hidden=!state.cols; $("ratelabel").hidden=!state.cols;
-  document.querySelectorAll("#rates .rate[data-i]").forEach(c=>{
-    const d=state.items[+c.dataset.i]; if(!d) return;
-    c.title=d.rating?`Einschätzung ${d.rating} von 5`:"Noch keine Einschätzung";
-    c.querySelectorAll("i").forEach(sq=>sq.classList.toggle("on",+sq.dataset.s<=d.rating));
-  });
+  applySearch();
 }
 function buildIndex(){
   const ol=$("index"); ol.textContent="";
@@ -583,7 +565,7 @@ function drawBanner(){
   } else if(state.dbEmpty){
     w.hidden=false; b.innerHTML="<b>Noch keine Daten in der Datenbank.</b> Bemerkungen können erst gespeichert werden, wenn Gabriel die Journale hochgeladen hat.";
   } else if(!state.cols && isMe()){
-    w.hidden=false; b.innerHTML="<b>Datenbank-Update fehlt.</b> Für Bestätigung und Einschätzung bitte in Supabase im SQL Editor die Datei supabase-update-1.sql ausführen.";
+    w.hidden=false; b.innerHTML="<b>Datenbank-Update fehlt.</b> Für die Bestätigung bitte in Supabase im SQL Editor die Datei supabase-update-1.sql ausführen.";
   }
 }
 
@@ -641,7 +623,7 @@ async function poll(){
       const meta=await api(Q_META); let changed=false;
       meta.forEach(m=>{ const it=state.items.find(x=>x.id===m.id); if(!it) return; if((m.updated||0)!==it.updated) changed=true; it.seen=m.seen_at||0; it.rating=m.rating||0; });
       if(changed&&!isMe()) await reloadItems();
-      renderMeta(); markDots(); paintRates(); facts();
+      renderMeta(); markDots(); facts();
     } else if(!isMe()){ await reloadItems(); }
   }catch(e){}
 }
@@ -652,12 +634,11 @@ async function reloadItems(){
 }
 setInterval(poll,30000);
 
-/* ===== Bestätigung (Berufsbildner) und Einschätzung (Lernender) ===== */
-const RATE_TXT=["","sehr schwierig","schwierig","in Ordnung","gut","sehr gut"];
+/* ===== Bestätigung durch den Berufsbildner ===== */
 function el(tag,cls,text){ const e=document.createElement(tag); if(cls) e.className=cls; if(text!==undefined) e.textContent=text; return e; }
 function renderMeta(){
   const d=cur(), box=$("meta"); if(!d||!state.cols){ box.hidden=true; return; } box.hidden=false;
-  const sb=$("seenbox"), rb=$("ratebox"); sb.textContent=""; rb.textContent="";
+  const sb=$("seenbox"); sb.textContent="";
   const bb=state.role==="bb";
   sb.append(el("h3","","Bestätigung des Berufsbildners"));
   if(d.seen>0){
@@ -668,24 +649,10 @@ function renderMeta(){
     sb.append(el("p","",bb?"Wenn du diese Woche gelesen hast, kannst du sie bestätigen.":"Noch nicht vom Berufsbildner bestätigt."));
     if(bb){ const b=el("button","tool primary","Gesehen und bestätigt"); b.type="button"; b.onclick=()=>setSeen(true); sb.append(b); }
   }
-  rb.append(el("h3","","Wie lief die Woche?"));
-  const stars=el("div","stars"); stars.setAttribute("role","group"); stars.setAttribute("aria-label","Einschätzung von 1 bis 5");
-  for(let n=1;n<=5;n++){
-    const s=el("button","star"+(n<=d.rating?" on":""),"★"); s.type="button"; s.disabled=!isMe();
-    s.setAttribute("aria-label",n+" von 5: "+RATE_TXT[n]); s.setAttribute("aria-pressed",String(n===d.rating));
-    s.onclick=()=>setRating(n===d.rating?0:n); stars.append(s);
-  }
-  rb.append(stars);
-  rb.append(el("p","",d.rating?d.rating+" von 5: "+RATE_TXT[d.rating]+".":(isMe()?"Tippe auf einen Stern. 1 = sehr schwierig, 5 = sehr gut. Nochmal tippen löscht.":"Noch keine Einschätzung.")));
 }
 async function setSeen(on){
   const d=cur(); if(!d) return;
   try{ if(state.live) await rpc("set_seen",{p_id:d.id,p_seen:on}); d.seen=on?Date.now():0; renderMeta(); markDots(); toast(on?"Als gesehen bestätigt.":"Bestätigung zurückgenommen."); }
-  catch(e){ toast("Fehler: "+e.message); }
-}
-async function setRating(n){
-  const d=cur(); if(!d||!isMe()) return;
-  try{ if(state.live) await rpc("set_rating",{p_pw:state.pw,p_id:d.id,p_rating:n>0?n:null}); d.rating=n; renderMeta(); paintRates(); facts(); }
   catch(e){ toast("Fehler: "+e.message); }
 }
 
@@ -783,7 +750,7 @@ async function enter(role,pw){
   $("eyebrow").textContent=role==="me"?"Verwaltung":"Ansicht Berufsbildner · nur lesen, Bemerkungen möglich";
   $("addweek").hidden=role!=="me"; $("newby").hidden=role!=="me";
   $("noteintro").textContent=role==="me"?"Du kannst Bemerkungen hinzufügen, ändern und entfernen. Wähle, ob sie vom Berufsbildner oder von dir sind.":"Freiwillig. Deine Bemerkung bleibt unter dem Journal stehen. Du kannst sie später noch ändern.";
-  $("stand").textContent="Stand "+new Date(1791533541131).toLocaleDateString("de-CH");
+  $("stand").textContent="Stand "+new Date(1791534284677).toLocaleDateString("de-CH");
   await load();
   state.stamp=state.items.map(x=>0);
   facts(); buildBars(); buildIndex(); drawBanner(); drawRemind();
