@@ -103,7 +103,8 @@ h1.big span{color:var(--signal)}
 .index{position:sticky;top:16px;border-top:2px solid var(--rule-strong)}
 @media (max-width:980px){.index{position:static}}
 .index ol{list-style:none;margin:0;padding:0}
-.entry{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 14px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--rule);padding:14px 0;align-items:baseline}
+.entry{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 14px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--rule);padding:14px 0 14px 20px;align-items:baseline}
+.entry .dot{position:absolute;left:2px;top:22px;width:10px;height:10px;border-radius:50%;background:var(--signal);box-shadow:0 0 0 3px var(--signal-soft)}
 .entry .nr{grid-row:span 2;font:800 1.7rem/1 var(--display);font-stretch:118%;letter-spacing:-.03em;color:var(--faint);font-variant-numeric:tabular-nums;min-width:2.1ch;transition:color .15s}
 .entry .dt{font:500 12px var(--mono);color:var(--sub);font-variant-numeric:tabular-nums}
 .entry .sum{font-weight:500;line-height:1.35}
@@ -387,8 +388,19 @@ function buildIndex(){
   const ol=$("index"); ol.textContent="";
   state.items.forEach((d,i)=>{
     const li=document.createElement("li"), b=document.createElement("button"); b.type="button"; b.className="entry"; b.dataset.i=i;
-    b.innerHTML=`<span class="nr">${pad2(d.nr)}</span><span class="dt">KW ${d.kw} · ${d.dates}</span><span class="sum"></span>`;
+    b.innerHTML=`<i class="dot" hidden></i><span class="nr">${pad2(d.nr)}</span><span class="dt">KW ${d.kw} · ${d.dates}</span><span class="sum"></span>`;
     b.querySelector(".sum").textContent=d.summary||"Ohne Titel"; b.onclick=()=>show(i,true); li.append(b); ol.append(li);
+  });
+  markDots();
+}
+/* Punkt links neben der Nummer: der Berufsbildner hat zu dieser Woche etwas geschrieben */
+function markDots(){
+  document.querySelectorAll(".entry").forEach(b=>{
+    const d=state.items[+b.dataset.i]; if(!d) return;
+    const n=state.rems.filter(r=>r.journal_id===d.id&&r.author==='bb').length;
+    const dot=b.querySelector(".dot"); if(!dot) return;
+    dot.hidden=n===0;
+    b.title=n?(n===1?"1 Bemerkung vom Berufsbildner":n+" Bemerkungen vom Berufsbildner"):"";
   });
 }
 function fit(){
@@ -513,6 +525,7 @@ function drawBanner(){
 /* ===== Bemerkungen ===== */
 function canEdit(r){ return isMe() || (state.role==="bb" && r.author==="bb" && mineSet().has(r.id)); }
 function drawRems(){
+  markDots();
   const d=cur(); const box=$("rems"); box.textContent=""; if(!d) return;
   const list=state.rems.filter(r=>r.journal_id===d.id);
   if(!list.length){ const p=document.createElement("p"); p.className="empty-rem"; p.textContent="Noch keine Bemerkung zu dieser Woche."; box.append(p); }
@@ -595,7 +608,7 @@ async function enter(role,pw){
   $("eyebrow").textContent=role==="me"?"Verwaltung":"Ansicht Berufsbildner · nur lesen, Bemerkungen möglich";
   $("addweek").hidden=role!=="me"; $("newby").hidden=role!=="me";
   $("noteintro").textContent=role==="me"?"Du kannst Bemerkungen hinzufügen, ändern und entfernen. Wähle, ob sie vom Berufsbildner oder von dir sind.":"Freiwillig. Deine Bemerkung bleibt unter dem Journal stehen. Du kannst sie später noch ändern.";
-  $("stand").textContent="Stand "+new Date(1791527276586).toLocaleDateString("de-CH");
+  $("stand").textContent="Stand "+new Date(1791529725898).toLocaleDateString("de-CH");
   await load();
   state.stamp=state.items.map(x=>0);
   facts(); buildBars(); buildIndex(); drawBanner();
