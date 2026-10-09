@@ -103,9 +103,9 @@ h1.big span{color:var(--signal)}
 .index{position:sticky;top:16px;border-top:2px solid var(--rule-strong)}
 @media (max-width:980px){.index{position:static}}
 .index ol{list-style:none;margin:0;padding:0}
-.entry{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 14px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--rule);padding:14px 0 14px 20px;align-items:baseline}
+.entry{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 14px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--rule);padding:14px 26px 14px 20px;align-items:baseline}
 .entry .dot{position:absolute;left:2px;top:22px;width:10px;height:10px;border-radius:50%;background:var(--signal);box-shadow:0 0 0 3px var(--signal-soft)}
-.entry .nr{grid-row:span 2;font:800 1.7rem/1 var(--display);font-stretch:118%;letter-spacing:-.03em;color:var(--faint);font-variant-numeric:tabular-nums;min-width:2.1ch;transition:color .15s}
+.entry .nr{grid-row:1 / span 3;font:800 1.7rem/1 var(--display);font-stretch:118%;letter-spacing:-.03em;color:var(--faint);font-variant-numeric:tabular-nums;min-width:2.1ch;transition:color .15s}
 .entry .dt{font:500 12px var(--mono);color:var(--sub);font-variant-numeric:tabular-nums}
 .entry .sum{font-weight:500;line-height:1.35}
 .entry:hover .nr{color:var(--ink)}
@@ -163,10 +163,35 @@ footer{border-top:2px solid var(--rule-strong);padding-block:18px 40px;display:f
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);background:var(--ink);color:var(--desk);padding:10px 16px;font-weight:500;font-size:14px;z-index:200;max-width:92vw}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.entry .chk{position:absolute;right:2px;top:16px;width:18px;height:18px;color:var(--ok);fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.snip{grid-column:2;font-size:13px;color:var(--sub);line-height:1.4;overflow-wrap:anywhere}
+.snip mark,.paper mark[data-q]{background:#ffe27a;color:#000;padding:0}
+.search{margin:6px 0 10px}
+.search input{width:100%;height:42px;padding:0 12px;font:inherit;border:1px solid var(--rule-strong);background:var(--surface);color:var(--ink);border-radius:0}
+.search .hint{margin:6px 0 0;min-height:1.2em;display:block}
+.bar.dim .col{opacity:.22}
+.ratelabel{margin:18px 0 0}
+.rates{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:clamp(4px,1vw,12px);margin-top:8px}
+.rate{display:flex;flex-direction:column;gap:2px}
+.rate i{display:block;height:4px;background:var(--rule)}
+.rate i.on{background:var(--signal)}
+.meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--rule-strong);margin-top:18px;background:var(--surface)}
+.meta>div{padding:16px 18px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-width:0}
+.meta>div+div{border-left:1px solid var(--rule-strong)}
+@media (max-width:760px){.meta{grid-template-columns:minmax(0,1fr)}.meta>div+div{border-left:0;border-top:1px solid var(--rule-strong)}}
+.meta h3{margin:0;font:800 1.1rem/1.1 var(--display);font-stretch:112%;letter-spacing:-.02em}
+.meta p{margin:0;color:var(--sub);font-size:14px}
+.meta p.ok{color:var(--ok);font-weight:600}
+.meta p.warnp{color:var(--warn)}
+.stars{display:flex;gap:4px}
+.star{width:40px;height:40px;border:1px solid var(--rule-strong);background:var(--surface);font-size:20px;line-height:1;color:var(--faint);padding:0;display:grid;place-items:center}
+.star.on{background:var(--signal);border-color:var(--signal);color:var(--signal-ink)}
+.star:disabled{cursor:default}
+.banner.remind{border-color:var(--signal)}
 @media print{
   @page{size:letter;margin:0}
   body{background:#fff}
-  .gate,.top,.weeks,.index,.dochead,.note,.docfoot,footer,.stamp,.toast,.banner,.hero{display:none!important}
+  .search,.meta,.remind,.rates,.ratelabel,.gate,.top,.weeks,.index,.dochead,.note,.docfoot,footer,.stamp,.toast,.banner,.hero{display:none!important}
   .wrap,.reader,.doc{display:block!important;padding:0!important;margin:0!important;max-width:none!important}
   .stage{padding:0!important;border:0!important;background:none!important}
   .paper{box-shadow:none!important;zoom:1!important;width:100%!important}
@@ -213,6 +238,7 @@ footer{border-top:2px solid var(--rule-strong);padding-block:18px 40px;display:f
   </section>
 
   <section class="wrap" id="bannerwrap" hidden><div class="banner" id="banner"></div></section>
+  <section class="wrap" id="remindwrap" hidden><div class="banner remind" id="remind"></div></section>
 
   <section class="wrap weeks" aria-labelledby="wk">
     <div class="weeks-head">
@@ -221,11 +247,18 @@ footer{border-top:2px solid var(--rule-strong);padding-block:18px 40px;display:f
     </div>
     <div class="bars" id="bars" role="list"></div>
     <div class="ticks" id="ticks" aria-hidden="true"></div>
+    <p class="label ratelabel" id="ratelabel" hidden>Selbsteinschätzung der Woche (1 bis 5)</p>
+    <div class="rates" id="rates" hidden></div>
   </section>
 
   <section class="wrap reader">
     <nav class="index" aria-label="Alle Nachweise">
       <p class="label" style="margin:14px 0 4px">Nachweise</p>
+      <div class="search">
+        <label class="label" for="q">Suche in allen Wochen</label>
+        <input type="search" id="q" placeholder="z. B. Router" autocomplete="off">
+        <span class="hint" id="qinfo"></span>
+      </div>
       <ol id="index"></ol>
       <form class="addweek" id="addweek" hidden>
         <label for="aw-date">Neue Woche (Montag)</label>
@@ -254,6 +287,11 @@ footer{border-top:2px solid var(--rule-strong);padding-block:18px 40px;display:f
         <div class="stamp" id="stamp" aria-hidden="true"></div>
       </div>
       <div class="docfoot"><span id="words"></span><span class="save" id="save"></span></div>
+
+      <section class="meta" id="meta" aria-label="Bestätigung und Einschätzung" hidden>
+        <div id="seenbox"></div>
+        <div id="ratebox"></div>
+      </section>
 
       <section class="note" aria-labelledby="noteh">
         <div class="intro">
@@ -297,7 +335,7 @@ const CONFIG = {
 const ONLINE = !!(CONFIG.url && CONFIG.key);
 const $ = id => document.getElementById(id);
 const EMBED = JSON.parse($("data").textContent);
-const state = { role:null, pw:"", items:[], rems:[], cur:0, dirty:false, saving:false, timer:null, dbEmpty:false, dbError:"", live:ONLINE, savedAt:0 };
+const state = { role:null, pw:"", items:[], rems:[], cur:0, dirty:false, saving:false, timer:null, dbEmpty:false, dbError:"", live:ONLINE, savedAt:0, cols:true, q:"", remindOff:false };
 
 /* Merker im Browser (nur für den Berufsbildner: eigener Schlüssel und eigene Bemerkungen) */
 const store = {
@@ -319,7 +357,10 @@ async function api(path,opt={}){
   const t=await r.text(); return t?JSON.parse(t):null;
 }
 const rpc=(name,args)=>api("rpc/"+name,{method:"POST",body:JSON.stringify(args)});
-const Q_J="journals?select=id,nr,start,dates,summary,html,content,updated&order=start.asc";
+const COLS="id,nr,start,dates,summary,html,content,updated";
+const Q_J="journals?select="+COLS+",seen_at,rating&order=start.asc";
+const Q_J_OLD="journals?select="+COLS+"&order=start.asc";
+const Q_META="journals?select=id,updated,seen_at,rating";
 const Q_R="remarks?select=id,journal_id,author,body,ts&order=ts.asc";
 
 /* ===== Hilfen ===== */
@@ -327,7 +368,8 @@ const words=s=>(String(s||"").match(/[A-Za-zÀ-ÿ0-9][\wÀ-ÿ.\-]*/g)||[]).lengt
 const fmtNum=n=>n.toLocaleString("de-CH");
 const slug=t=>t.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 function isoWeek(d){ const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=t.getUTCDay()||7; t.setUTCDate(t.getUTCDate()+4-day); const y0=new Date(Date.UTC(t.getUTCFullYear(),0,1)); return Math.ceil(((t-y0)/864e5+1)/7); }
-function norm(j){ const d=new Date(j.start+"T12:00:00"); return {id:j.id,nr:j.nr,start:j.start,dates:j.dates,summary:j.summary||"",html:j.html||"",content:j.content||"",date:d,kw:isoWeek(d),words:words(j.content)}; }
+function textOf(html){ if(!html) return ""; const d=new DOMParser().parseFromString("<body>"+html.replace(/<\/(p|td|tr|h\d|li)>|<br\s*\/?>/gi," $&")+"</body>","text/html"); return d.body.textContent.replace(/\s+/g," ").trim(); }
+function norm(j){ const d=new Date(j.start+"T12:00:00"); const txt=textOf(j.html)||j.content||""; return {id:j.id,nr:j.nr,start:j.start,dates:j.dates,summary:j.summary||"",html:j.html||"",content:txt,updated:j.updated||0,seen:j.seen_at||0,rating:j.rating||0,date:d,kw:isoWeek(d),words:words(txt)}; }
 function clean(html){
   const doc=new DOMParser().parseFromString("<body>"+html+"</body>","text/html");
   doc.querySelectorAll("script,iframe,object,embed,link,meta,style,form").forEach(n=>n.remove());
@@ -345,7 +387,9 @@ async function load(){
   state.dbError=""; state.dbEmpty=false;
   if(!ONLINE){ state.items=EMBED.map(norm); state.rems=[]; return; }
   try{
-    const js=await api(Q_J);
+    let js;
+    try{ js=await api(Q_J); state.cols=true; }
+    catch(e){ if(/seen_at|rating|column/i.test(e.message)){ js=await api(Q_J_OLD); state.cols=false; } else throw e; }
     state.dbEmpty=!js.length;
     state.items=(js.length?js:EMBED).map(norm);
     state.rems=await api(Q_R);
@@ -357,13 +401,18 @@ async function load(){
 }
 
 /* ===== Anzeige ===== */
+function avgRating(){
+  if(!state.cols) return "–";
+  const r=state.items.map(d=>d.rating).filter(x=>x>0);
+  return r.length?(r.reduce((a,b)=>a+b,0)/r.length).toLocaleString("de-CH",{minimumFractionDigits:1,maximumFractionDigits:1})+" / 5":"–";
+}
 function facts(){
   const it=state.items, total=it.reduce((s,d)=>s+d.words,0), kws=it.map(d=>d.kw), last=it[it.length-1];
-  const rows=[["Nachweise",pad2(it.length)],["Kalenderwochen",it.length?"KW "+Math.min(...kws)+"–"+Math.max(...kws):"–"],["Wörter total",fmtNum(total)],["Neuester",last?last.dates:"–"]];
+  const rows=[["Nachweise",pad2(it.length)],["Kalenderwochen",it.length?"KW "+Math.min(...kws)+"–"+Math.max(...kws):"–"],["Wörter total",fmtNum(total)],["Ø Einschätzung",avgRating()]];
   $("facts").innerHTML=rows.map(([k,v])=>`<div class="fact"><span class="label">${k}</span><b>${v}</b></div>`).join("");
 }
 function buildBars(){
-  const it=state.items; const bars=$("bars"), ticks=$("ticks"); bars.textContent=""; ticks.textContent="";
+  const it=state.items; const bars=$("bars"), ticks=$("ticks"), rates=$("rates"); bars.textContent=""; ticks.textContent=""; rates.textContent="";
   if(!it.length) return;
   const byKw=new Map(it.map((d,i)=>[d.kw,i]));
   const min=Math.min(...it.map(d=>d.kw)), max=Math.max(...it.map(d=>d.kw));
@@ -382,16 +431,28 @@ function buildBars(){
       t.dataset.i=i; t.innerHTML=`<b>KW ${kw}</b><span>${d.dates.replace(/\.\d{2}$/,"")}</span>`;
     }
     bars.append(b); ticks.append(t);
+    const rc=document.createElement("div"); rc.className="rate";
+    if(i!==undefined){ rc.dataset.i=i; for(let s=5;s>=1;s--){ const sq=document.createElement("i"); sq.dataset.s=s; rc.append(sq); } }
+    rates.append(rc);
   }
+  paintRates(); applySearch();
+}
+function paintRates(){
+  $("rates").hidden=!state.cols; $("ratelabel").hidden=!state.cols;
+  document.querySelectorAll("#rates .rate[data-i]").forEach(c=>{
+    const d=state.items[+c.dataset.i]; if(!d) return;
+    c.title=d.rating?`Einschätzung ${d.rating} von 5`:"Noch keine Einschätzung";
+    c.querySelectorAll("i").forEach(sq=>sq.classList.toggle("on",+sq.dataset.s<=d.rating));
+  });
 }
 function buildIndex(){
   const ol=$("index"); ol.textContent="";
   state.items.forEach((d,i)=>{
     const li=document.createElement("li"), b=document.createElement("button"); b.type="button"; b.className="entry"; b.dataset.i=i;
-    b.innerHTML=`<i class="dot" hidden></i><span class="nr">${pad2(d.nr)}</span><span class="dt">KW ${d.kw} · ${d.dates}</span><span class="sum"></span>`;
+    b.innerHTML=`<i class="dot" hidden></i><svg class="chk" viewBox="0 0 18 18" hidden aria-label="Vom Berufsbildner bestätigt"><path d="m4 9.5 3.4 3.4L14 5.5"/></svg><span class="nr">${pad2(d.nr)}</span><span class="dt">KW ${d.kw} · ${d.dates}</span><span class="sum"></span><span class="snip" hidden></span>`;
     b.querySelector(".sum").textContent=d.summary||"Ohne Titel"; b.onclick=()=>show(i,true); li.append(b); ol.append(li);
   });
-  markDots();
+  markDots(); applySearch();
 }
 /* Punkt links neben der Nummer: der Berufsbildner hat zu dieser Woche etwas geschrieben */
 function markDots(){
@@ -400,7 +461,9 @@ function markDots(){
     const n=state.rems.filter(r=>r.journal_id===d.id&&r.author==='bb').length;
     const dot=b.querySelector(".dot"); if(!dot) return;
     dot.hidden=n===0;
-    b.title=n?(n===1?"1 Bemerkung vom Berufsbildner":n+" Bemerkungen vom Berufsbildner"):"";
+    const chk=b.querySelector(".chk"); const seen=state.cols&&d.seen>0; if(chk) chk.hidden=!seen;
+    const parts=[]; if(n) parts.push(n===1?"1 Bemerkung vom Berufsbildner":n+" Bemerkungen vom Berufsbildner"); if(seen) parts.push("Vom Berufsbildner bestätigt");
+    b.title=parts.join(" · ");
   });
 }
 function fit(){
@@ -425,7 +488,7 @@ function show(i,user){
   const paper=$("paper");
   const apply=()=>{
     paper.innerHTML=clean(d.html||"<p style='margin:0 0 10pt'>&nbsp;</p>");
-    paper.contentEditable=isMe()?"true":"false"; paper.classList.remove("swap"); fit();
+    paper.contentEditable=isMe()?"true":"false"; paper.classList.remove("swap"); fit(); applyHighlight();
   };
   if(user && !matchMedia("(prefers-reduced-motion:reduce)").matches){ paper.classList.add("swap"); setTimeout(apply,150); } else apply();
   $("docmeta").textContent=`Nr. ${pad2(d.nr)} · KW ${d.kw} · ${d.dates}`;
@@ -437,7 +500,7 @@ function show(i,user){
   document.querySelectorAll(".tick").forEach(t=>t.classList.toggle("on",t.dataset.i!==undefined&&+t.dataset.i===i));
   document.querySelectorAll(".entry").forEach(b=>b.setAttribute("aria-current",String(+b.dataset.i===i)));
   try{ history.replaceState(null,"","#nr-"+d.nr); }catch(e){}
-  drawRems(); setSave();
+  drawRems(); renderMeta(); setSave();
   if(user && matchMedia("(max-width:980px)").matches) $("doc").scrollIntoView({behavior:"smooth",block:"start"});
 }
 
@@ -445,7 +508,7 @@ function show(i,user){
 function queueSave(){ clearTimeout(state.timer); state.timer=setTimeout(saveNow,1000); }
 function markDirty(){
   const d=cur(); if(!d) return;
-  d.html=$("paper").innerHTML; d.content=$("paper").innerText.trim(); d.summary=$("doctitle").innerText.trim().slice(0,120);
+  d.html=cleanHtml($("paper")); d.content=$("paper").innerText.trim(); d.summary=$("doctitle").innerText.trim().slice(0,120);
   d.words=words(d.content); $("words").textContent=`${fmtNum(d.words)} Wörter`;
   state.dirty=true; setSave(); queueSave();
 }
@@ -459,7 +522,7 @@ async function saveNow(){
   try{
     await rpc("save_journal",{p_pw:state.pw,p_id:snap.id,p_nr:snap.nr,p_start:snap.start,p_dates:snap.dates,p_summary:snap.summary,p_html:snap.html,p_content:snap.content});
     if(cur()===d && d.html===snap.html && d.summary===snap.summary) state.dirty=false;
-    state.savedAt=Date.now();
+    state.savedAt=Date.now(); d.updated=Date.now();
   }catch(e){ state.saving=false; setSave("Fehler: "+e.message+" – neuer Versuch…"); state.timer=setTimeout(saveNow,5000); return; }
   state.saving=false; buildBars(); buildIndex(); facts(); restoreMarks(); setSave();
   if(state.dirty) queueSave();
@@ -519,6 +582,8 @@ function drawBanner(){
     const btn=document.createElement("button"); btn.type="button"; btn.className="tool primary"; btn.textContent="Journale in die Datenbank laden"; btn.onclick=()=>importAll(btn); b.append(btn);
   } else if(state.dbEmpty){
     w.hidden=false; b.innerHTML="<b>Noch keine Daten in der Datenbank.</b> Bemerkungen können erst gespeichert werden, wenn Gabriel die Journale hochgeladen hat.";
+  } else if(!state.cols && isMe()){
+    w.hidden=false; b.innerHTML="<b>Datenbank-Update fehlt.</b> Für Bestätigung und Einschätzung bitte in Supabase im SQL Editor die Datei supabase-update-1.sql ausführen.";
   }
 }
 
@@ -572,10 +637,120 @@ async function poll(){
   const a=document.activeElement; if(a&&a.tagName==="TEXTAREA"&&a.id!=="newrem") return;
   try{
     const rs=await api(Q_R); if(JSON.stringify(rs)!==JSON.stringify(state.rems.filter(r=>!String(r.id).startsWith("lokal-")))){ state.rems=rs; drawRems(); }
-    if(!isMe()){ const js=await api(Q_J); if(js.length&&JSON.stringify(js.map(j=>j.updated))!==JSON.stringify(state.stamp)){ state.stamp=js.map(j=>j.updated); const id=cur()&&cur().id; state.items=js.map(norm); state.items.sort((x,y)=>x.start<y.start?-1:1); const k=state.items.findIndex(x=>x.id===id); buildBars(); buildIndex(); facts(); show(k>=0?k:state.items.length-1,false); } }
+    if(state.cols){
+      const meta=await api(Q_META); let changed=false;
+      meta.forEach(m=>{ const it=state.items.find(x=>x.id===m.id); if(!it) return; if((m.updated||0)!==it.updated) changed=true; it.seen=m.seen_at||0; it.rating=m.rating||0; });
+      if(changed&&!isMe()) await reloadItems();
+      renderMeta(); markDots(); paintRates(); facts();
+    } else if(!isMe()){ await reloadItems(); }
   }catch(e){}
 }
+async function reloadItems(){
+  const js=await api(state.cols?Q_J:Q_J_OLD); if(!js.length) return;
+  const id=cur()&&cur().id; state.items=js.map(norm); state.items.sort((x,y)=>x.start<y.start?-1:1);
+  const k=state.items.findIndex(x=>x.id===id); buildBars(); buildIndex(); facts(); show(k>=0?k:state.items.length-1,false);
+}
 setInterval(poll,30000);
+
+/* ===== Bestätigung (Berufsbildner) und Einschätzung (Lernender) ===== */
+const RATE_TXT=["","sehr schwierig","schwierig","in Ordnung","gut","sehr gut"];
+function el(tag,cls,text){ const e=document.createElement(tag); if(cls) e.className=cls; if(text!==undefined) e.textContent=text; return e; }
+function renderMeta(){
+  const d=cur(), box=$("meta"); if(!d||!state.cols){ box.hidden=true; return; } box.hidden=false;
+  const sb=$("seenbox"), rb=$("ratebox"); sb.textContent=""; rb.textContent="";
+  const bb=state.role==="bb";
+  sb.append(el("h3","","Bestätigung des Berufsbildners"));
+  if(d.seen>0){
+    sb.append(el("p","ok","✓ Gesehen und bestätigt am "+fmtDT(d.seen)+"."));
+    if(d.updated>d.seen+60000) sb.append(el("p","warnp","Das Journal wurde danach noch geändert."));
+    if(bb){ const b=el("button","tool","Bestätigung zurücknehmen"); b.type="button"; b.onclick=()=>setSeen(false); sb.append(b); }
+  } else {
+    sb.append(el("p","",bb?"Wenn du diese Woche gelesen hast, kannst du sie bestätigen.":"Noch nicht vom Berufsbildner bestätigt."));
+    if(bb){ const b=el("button","tool primary","Gesehen und bestätigt"); b.type="button"; b.onclick=()=>setSeen(true); sb.append(b); }
+  }
+  rb.append(el("h3","","Wie lief die Woche?"));
+  const stars=el("div","stars"); stars.setAttribute("role","group"); stars.setAttribute("aria-label","Einschätzung von 1 bis 5");
+  for(let n=1;n<=5;n++){
+    const s=el("button","star"+(n<=d.rating?" on":""),"★"); s.type="button"; s.disabled=!isMe();
+    s.setAttribute("aria-label",n+" von 5: "+RATE_TXT[n]); s.setAttribute("aria-pressed",String(n===d.rating));
+    s.onclick=()=>setRating(n===d.rating?0:n); stars.append(s);
+  }
+  rb.append(stars);
+  rb.append(el("p","",d.rating?d.rating+" von 5: "+RATE_TXT[d.rating]+".":(isMe()?"Tippe auf einen Stern. 1 = sehr schwierig, 5 = sehr gut. Nochmal tippen löscht.":"Noch keine Einschätzung.")));
+}
+async function setSeen(on){
+  const d=cur(); if(!d) return;
+  try{ if(state.live) await rpc("set_seen",{p_id:d.id,p_seen:on}); d.seen=on?Date.now():0; renderMeta(); markDots(); toast(on?"Als gesehen bestätigt.":"Bestätigung zurückgenommen."); }
+  catch(e){ toast("Fehler: "+e.message); }
+}
+async function setRating(n){
+  const d=cur(); if(!d||!isMe()) return;
+  try{ if(state.live) await rpc("set_rating",{p_pw:state.pw,p_id:d.id,p_rating:n>0?n:null}); d.rating=n; renderMeta(); paintRates(); facts(); }
+  catch(e){ toast("Fehler: "+e.message); }
+}
+
+/* ===== Suche über alle Wochen ===== */
+const escHtml=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const escRe=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+const terms=()=>state.q.toLowerCase().split(/\s+/).filter(Boolean);
+const matches=d=>{ const t=terms(); if(!t.length) return true; const h=(d.summary+" "+d.dates+" "+d.content).toLowerCase(); return t.every(x=>h.includes(x)); };
+function snippet(d){
+  const t=terms(), c=d.content.replace(/\s+/g," "), lc=c.toLowerCase(); let pos=-1, len=0;
+  for(const x of t){ const p=lc.indexOf(x); if(p>=0){ pos=p; len=x.length; break; } }
+  if(pos<0) return "";
+  const a=Math.max(0,pos-36), b=Math.min(c.length,pos+len+60);
+  const s=(a>0?"…":"")+c.slice(a,b)+(b<c.length?"…":"");
+  const re=new RegExp("("+t.map(x=>escRe(escHtml(x))).join("|")+")","gi");
+  return escHtml(s).replace(re,"<mark>$1</mark>");
+}
+function applySearch(){
+  const t=terms(); let n=0;
+  document.querySelectorAll(".entry").forEach(b=>{
+    const d=state.items[+b.dataset.i]; if(!d) return;
+    const ok=matches(d); b.parentElement.hidden=!ok; if(ok) n++;
+    const sn=b.querySelector(".snip"), html=(t.length&&ok)?snippet(d):""; if(sn){ sn.hidden=!html; sn.innerHTML=html; }
+  });
+  document.querySelectorAll(".bar[data-i]").forEach(b=>{ const d=state.items[+b.dataset.i]; b.classList.toggle("dim",!!d&&!matches(d)); });
+  const info=$("qinfo"); if(info) info.textContent=t.length?(n?`${n} von ${state.items.length} Wochen`:"Keine Treffer"):"";
+  applyHighlight();
+}
+function unmark(root){ root.querySelectorAll("mark[data-q]").forEach(m=>m.replaceWith(...m.childNodes)); root.normalize(); }
+function applyHighlight(){
+  const p=$("paper"); if(!p) return; unmark(p);
+  const t=terms().filter(x=>x.length>=2); if(!t.length) return;
+  const re=new RegExp("("+t.map(escRe).join("|")+")","gi");
+  const w=document.createTreeWalker(p,NodeFilter.SHOW_TEXT), nodes=[]; while(w.nextNode()) nodes.push(w.currentNode);
+  nodes.forEach(n=>{
+    const s=n.nodeValue; if(s.search(re)<0) return;
+    const frag=document.createDocumentFragment(); let last=0;
+    s.replace(re,(m,g,off)=>{ frag.append(s.slice(last,off)); const mk=document.createElement("mark"); mk.dataset.q="1"; mk.textContent=m; frag.append(mk); last=off+m.length; return m; });
+    frag.append(s.slice(last)); n.replaceWith(frag);
+  });
+}
+function cleanHtml(root){ const c=root.cloneNode(true); c.querySelectorAll("mark[data-q]").forEach(m=>m.replaceWith(...m.childNodes)); return c.innerHTML; }
+$("q").addEventListener("input",()=>{ state.q=$("q").value; applySearch(); });
+$("q").addEventListener("keydown",ev=>{ if(ev.key==="Escape"){ $("q").value=""; state.q=""; applySearch(); } });
+
+/* ===== Erinnerung (nur Lernender): ab Donnerstag, wenn die Woche fehlt oder kaum ausgefüllt ist ===== */
+function drawRemind(){
+  const w=$("remindwrap"), b=$("remind"); b.textContent=""; w.hidden=true;
+  if(!isMe()||state.remindOff||!state.items.length) return;
+  const now=new Date(), wd=now.getDay();
+  if(!(wd>=4||wd===0)&&wd!==6) return;
+  const mon=new Date(now); mon.setDate(now.getDate()-(wd===0?6:wd-1)); mon.setHours(12,0,0,0);
+  const fri=new Date(mon); fri.setDate(mon.getDate()+4);
+  const iso=d=>d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+  const item=state.items.find(x=>x.start>=iso(mon)&&x.start<=iso(fri));
+  const label=`KW ${isoWeek(mon)} (${pad2(mon.getDate())}.–${pad2(fri.getDate())}.${pad2(fri.getMonth()+1)}.)`;
+  let msg, act;
+  if(!item){ msg=`Für diese Woche, ${label}, gibt es noch kein Lernjournal. `; act=["Woche anlegen",()=>{ $("aw-date").value=iso(mon); $("addweek").scrollIntoView({behavior:"smooth",block:"center"}); $("aw-sum").focus(); }]; }
+  else if(item.words<100){ msg=`${label}: Das Journal ist noch kaum ausgefüllt (${item.words} Wörter). `; act=["Öffnen",()=>show(state.items.indexOf(item),true)]; }
+  else return;
+  const strong=document.createElement("b"); strong.textContent="Erinnerung: "; b.append(strong,document.createTextNode(msg));
+  const go=el("button","tool primary",act[0]); go.type="button"; go.onclick=act[1];
+  const later=el("button","tool","Später"); later.type="button"; later.onclick=()=>{ state.remindOff=true; w.hidden=true; };
+  b.append(go,later); w.hidden=false;
+}
 
 /* ===== Werkzeuge ===== */
 $("prev").onclick=()=>show(state.cur-1,true);
@@ -608,10 +783,10 @@ async function enter(role,pw){
   $("eyebrow").textContent=role==="me"?"Verwaltung":"Ansicht Berufsbildner · nur lesen, Bemerkungen möglich";
   $("addweek").hidden=role!=="me"; $("newby").hidden=role!=="me";
   $("noteintro").textContent=role==="me"?"Du kannst Bemerkungen hinzufügen, ändern und entfernen. Wähle, ob sie vom Berufsbildner oder von dir sind.":"Freiwillig. Deine Bemerkung bleibt unter dem Journal stehen. Du kannst sie später noch ändern.";
-  $("stand").textContent="Stand "+new Date(1791529725898).toLocaleDateString("de-CH");
+  $("stand").textContent="Stand "+new Date(1791533541131).toLocaleDateString("de-CH");
   await load();
   state.stamp=state.items.map(x=>0);
-  facts(); buildBars(); buildIndex(); drawBanner();
+  facts(); buildBars(); buildIndex(); drawBanner(); drawRemind();
   const m=location.hash.match(/^#nr-(\d+)$/);
   const start=m?state.items.findIndex(d=>d.nr===+m[1]):state.items.length-1;
   show(start>=0?start:Math.max(0,state.items.length-1),false);
