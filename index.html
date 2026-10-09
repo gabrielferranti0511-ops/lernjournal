@@ -188,19 +188,25 @@ footer{border-top:2px solid var(--rule-strong);padding-block:18px 40px;display:f
 .star.on{background:var(--signal);border-color:var(--signal);color:var(--signal-ink)}
 .star:disabled{cursor:default}
 .banner.remind{border-color:var(--signal)}
+.gate-theme{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);right:12px}
+.streak{display:inline-flex;align-items:baseline;gap:8px;border:1px solid var(--rule-strong);background:var(--surface);padding:6px 12px;font:500 12px/1.2 var(--mono);letter-spacing:.04em;color:var(--sub)}
+.streak b{font:800 1.5rem/1 var(--display);letter-spacing:-.02em;color:var(--signal)}
+.streak[hidden]{display:none}
 @media print{
   @page{size:letter;margin:0}
   body{background:#fff}
-  .search,.meta,.remind,.rates,.ratelabel,.gate,.top,.weeks,.index,.dochead,.note,.docfoot,footer,.stamp,.toast,.banner,.hero{display:none!important}
+  .themebtn,.streak,.search,.meta,.remind,.rates,.ratelabel,.gate,.top,.weeks,.index,.dochead,.note,.docfoot,footer,.stamp,.toast,.banner,.hero{display:none!important}
   .wrap,.reader,.doc{display:block!important;padding:0!important;margin:0!important;max-width:none!important}
   .stage{padding:0!important;border:0!important;background:none!important}
   .paper{box-shadow:none!important;zoom:1!important;width:100%!important}
 }
 </style>
+<script>try{var __t=localStorage.getItem("lj-theme");if(__t==="dark"||__t==="light")document.documentElement.setAttribute("data-theme",__t)}catch(e){}</script>
 </head>
 <body>
 
 <div class="gate" id="gate">
+  <button class="tool icon themebtn gate-theme" type="button" aria-label="Zwischen hell und dunkel wechseln" title="Hell / dunkel"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor"/></svg></button>
   <form class="gate-card" id="gateForm">
     <p class="label">ePortfolio · Lehre</p>
     <h1>Lernjournal<span>.</span></h1>
@@ -220,6 +226,7 @@ footer{border-top:2px solid var(--rule-strong);padding-block:18px 40px;display:f
     <div class="topbar">
       <div class="mark"><i aria-hidden="true"></i>Ausbildungsnachweis</div>
       <div class="topright">
+        <button class="tool icon themebtn" type="button" aria-label="Zwischen hell und dunkel wechseln" title="Hell / dunkel"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor"/></svg></button>
         <span class="chip" id="rolechip"></span>
         <button class="tool ghost" type="button" id="logout">Abmelden</button>
       </div>
@@ -243,6 +250,7 @@ footer{border-top:2px solid var(--rule-strong);padding-block:18px 40px;display:f
   <section class="wrap weeks" aria-labelledby="wk">
     <div class="weeks-head">
       <h2 class="label" id="wk" style="margin:0">Lehrwochen · Wörter pro Nachweis</h2>
+      <span class="streak" id="streak" hidden></span>
       <p>Balken antippen, um die Woche zu öffnen.</p>
     </div>
     <div class="bars" id="bars" role="list"></div>
@@ -425,7 +433,7 @@ function buildBars(){
     bars.append(b); ticks.append(t);
 
   }
-  applySearch();
+  applySearch(); drawStreak();
 }
 function buildIndex(){
   const ol=$("index"); ol.textContent="";
@@ -741,6 +749,42 @@ document.addEventListener("visibilitychange",()=>{ if(document.hidden) saveNow()
 window.addEventListener("pagehide",saveNow);
 $("logout").onclick=()=>{ saveNow(); location.href=location.pathname; };
 
+/* ===== Hell oder dunkel selbst wählen ===== */
+document.querySelectorAll(".themebtn").forEach(b=>b.onclick=()=>{
+  const root=document.documentElement;
+  const now=root.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");
+  const next=now==="dark"?"light":"dark";
+  root.setAttribute("data-theme",next); store.set("lj-theme",next);
+});
+
+/* ===== Serie: Wochen in Folge geschrieben. Ferienwochen unterbrechen die Serie nicht und zählen nicht mit. ===== */
+const HOLIDAY_KW=[40];
+function mondayOf(s){ const d=typeof s==="string"?new Date(s+"T12:00:00"):new Date(s); d.setHours(12,0,0,0); d.setDate(d.getDate()-((d.getDay()||7)-1)); return d; }
+const dkey=d=>d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+function shiftWeek(d,n){ const x=new Date(d); x.setDate(x.getDate()+7*n); return x; }
+function prevWeek(d){ let p=shiftWeek(d,-1); while(HOLIDAY_KW.includes(isoWeek(p))) p=shiftWeek(p,-1); return p; }
+function drawStreak(){
+  const el=$("streak"); if(!el) return;
+  const have=new Set(state.items.filter(d=>d.words>=100).map(d=>dkey(mondayOf(d.start))));
+  if(!have.size){ el.hidden=true; return; }
+  const mons=[...have].sort();
+  let c=new Date(mons[mons.length-1]+"T12:00:00"), n=1;
+  while(have.has(dkey(prevWeek(c)))){ c=prevWeek(c); n++; }
+  let best=1, run=1;
+  for(let i=1;i<mons.length;i++){ run=dkey(prevWeek(new Date(mons[i]+"T12:00:00")))===mons[i-1]?run+1:1; best=Math.max(best,run); }
+  const alive=mons[mons.length-1]>=dkey(shiftWeek(mondayOf(new Date()),-1));
+  el.textContent="";
+  if(alive){
+    const b=document.createElement("b"); b.textContent=String(n);
+    el.append(b,document.createTextNode(n===1?"Woche geschrieben":"Wochen in Folge"+(best>n?" · Rekord "+best:"")));
+    el.title="Längste Serie: "+best+" Wochen. Ferienwochen unterbrechen die Serie nicht.";
+  } else {
+    el.append(document.createTextNode("Serie unterbrochen · zuletzt "+n+(n===1?" Woche":" Wochen")));
+    el.title="Schreibe diese Woche ein Journal, um eine neue Serie zu starten.";
+  }
+  el.hidden=false;
+}
+
 /* ===== Zugang ===== */
 async function enter(role,pw){
   state.role=role; state.pw=pw||"";
@@ -750,7 +794,7 @@ async function enter(role,pw){
   $("eyebrow").textContent=role==="me"?"Verwaltung":"Ansicht Berufsbildner · nur lesen, Bemerkungen möglich";
   $("addweek").hidden=role!=="me"; $("newby").hidden=role!=="me";
   $("noteintro").textContent=role==="me"?"Du kannst Bemerkungen hinzufügen, ändern und entfernen. Wähle, ob sie vom Berufsbildner oder von dir sind.":"Freiwillig. Deine Bemerkung bleibt unter dem Journal stehen. Du kannst sie später noch ändern.";
-  $("stand").textContent="Stand "+new Date(1791535225597).toLocaleDateString("de-CH");
+  $("stand").textContent="Stand "+new Date(1791539203602).toLocaleDateString("de-CH");
   await load();
   state.stamp=state.items.map(x=>0);
   facts(); buildBars(); buildIndex(); drawBanner(); drawRemind();
